@@ -128,8 +128,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Keys and others for private connections
+# Project local files
 keys/
+tmp/
 
 # IDE files
 .idea/
