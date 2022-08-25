@@ -32,20 +32,20 @@ Mapeamento de alterações nas nomenclaturas de tabelas e colunas.
 
 ### Tabela `pontosLinha`
 
-**Renomeação:** `pontosLinha` -> `bus_stop`
+**Renomeação:** `pontosLinha` -> `bus_line_stop`
 
-| **Original** | **Remapeado**        | **Tipo**             | **Definição**               |
-|--------------|----------------------|----------------------|-----------------------------|
-| NOME         | name                 | text                 | Nome do ponto               |
-| NUM          | id                   | bigint               | Número do ponto             |
-| LAT          | latitude             | double precision     | Latitude                    |
-| LON          | longitude            | double precision     | Longitude                   |
-| SEQ          | sequence             | bigint               | Sequência do ponto          |
-| GRUPO        | group                | text                 | Agrupadores de pontos       |
-| SENTIDO      | direction            | text                 | Sentido do veículo na linha |
-| TIPO         | type                 | text                 | Tipo de ponto               |
-| ITINERARY_ID | \> coluna deletada < | \> coluna deletada < | \> coluna deletada <        |
-| COD          | bus_line_id          | text                 | Código da linha             |
+| **Original** | **Remapeado** | **Tipo**         | **Definição**               |
+|--------------|---------------|------------------|-----------------------------|
+| NOME         | name          | text             | Nome do ponto               |
+| NUM          | bus_stop_id   | bigint           | Número do ponto             |
+| LAT          | latitude      | double precision | Latitude                    |
+| LON          | longitude     | double precision | Longitude                   |
+| SEQ          | sequence      | bigint           | Sequência do ponto          |
+| GRUPO        | group         | text             | Agrupadores de pontos       |
+| SENTIDO      | direction     | text             | Sentido do veículo na linha |
+| TIPO         | type          | text             | Tipo de ponto               |
+| ITINERARY_ID | itinerary_id  | bigint           | Identificador do itinerário |
+| COD          | bus_line_id   | text             | Código da linha             |
 
 
 ### Tabela `shapeLinha`
@@ -63,28 +63,28 @@ Mapeamento de alterações nas nomenclaturas de tabelas e colunas.
 
 **Renomeação:** `tabelaLinha` -> `bus_line_timetable`
 
-| **Original** | **Remapeado**         | **Tipo** | **Definição**                                                             |
-|--------------|-----------------------|----------|---------------------------------------------------------------------------|
-| HORA         | time                  | text     | Horário de parada do ônibus                                               |
-| PONTO        | bus_stop_name         | text     | Nome do ponto de ônibus                                                   |
-| DIA          | type_of_day           | int      | Tipo de dia - 1 = dia útil; 2 = sábado; 3 = domingo; 4 = feriado          |
-| NUM          | bus_stop_id           | bigint   | Identificador do ponto de ônibus                                          |
-| TABELA       | bus_line_timetable_id | text     | Identificador da tabela de horários a qual o veículo está operando no dia |
-| ADAPT        | accessibility         | text     | Tipo de equipamento de acessibilidade disponível na parada de ônibus      |
-| COD          | bus_line_id           | text     | Identificador da linha de ônibus                                          |
+| **Original** | **Remapeado** | **Tipo** | **Definição**                                                             |
+|--------------|---------------|----------|---------------------------------------------------------------------------|
+| HORA         | time          | text     | Horário de parada do ônibus                                               |
+| PONTO        | bus_stop_name | text     | Nome do ponto de ônibus                                                   |
+| DIA          | type_of_day   | int      | Tipo de dia - 1 = dia útil; 2 = sábado; 3 = domingo; 4 = feriado          |
+| NUM          | bus_stop_id   | bigint   | Identificador do ponto de ônibus                                          |
+| TABELA       | timetable_id  | text     | Identificador da tabela de horários a qual o veículo está operando no dia |
+| ADAPT        | accessibility | text     | Tipo de equipamento de acessibilidade disponível na parada de ônibus      |
+| COD          | bus_line_id   | text     | Identificador da linha de ônibus                                          |
 
 ### Tabela `tabelaVeiculo`
 
 **Renomeação:** `tabelaVeiculo` -> `bus_vehicle_timetable`
 
-| **Original** | **Remapeado**        | **Tipo** | **Definição**                                  |
-|--------------|----------------------|----------|------------------------------------------------|
-| COD_PONTO    | bus_stop_id          | bigint   | Identificador do ponto de ônibus               |
-| COD_LINHA    | bus_line_id          | text     | Identificador da linha de ônibus               |
-| NOME_LINHA   | bus_line_name        | text     | Nome da linha de ônibus                        |
-| VEICULO      | vehicle_id           | text     | Identificador do veículo                       |
-| HORARIO      | time                 | text     | Horário de parada do veículo                   |
-| TABELA       | vehicle_timetable_id | text     | Identificador da tabela de horários do veículo |
+| **Original** | **Remapeado** | **Tipo** | **Definição**                                  |
+|--------------|---------------|----------|------------------------------------------------|
+| COD_PONTO    | bus_stop_id   | bigint   | Identificador do ponto de ônibus               |
+| COD_LINHA    | bus_line_id   | text     | Identificador da linha de ônibus               |
+| NOME_LINHA   | bus_line_name | text     | Nome da linha de ônibus                        |
+| VEICULO      | vehicle_id    | text     | Identificador do veículo                       |
+| HORARIO      | time          | text     | Horário de parada do veículo                   |
+| TABELA       | timetable_id  | text     | Identificador da tabela de horários do veículo |
 
 ### Tabela `veiculos`
 
