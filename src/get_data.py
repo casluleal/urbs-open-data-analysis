@@ -7,7 +7,7 @@ import time
 import pandas as pd
 import requests
 
-from file_remapper import FileToTableRemapper
+from file_to_table_remapper import FileToTableRemapper
 from db_connection import DbConnector
 
 BASE_URL = 'https://dadosabertos.c3sl.ufpr.br/curitibaurbs'
