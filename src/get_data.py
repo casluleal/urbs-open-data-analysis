@@ -11,101 +11,100 @@ from file_to_table_remapper import FileToTableRemapper
 from db_connection import DbConnector
 
 BASE_URL = 'https://dadosabertos.c3sl.ufpr.br/curitibaurbs'
-FILES = {
-    'trechosItinerarios': False,
-    'tabelaVeiculo': True,
-    'tabelaLinha': True,
-    'shapeLinha': True,
-    'pontosLinha': True,
-    'veiculos': False,
-    'pois': False,
-    'linhas': True,
-}
 FOLDER = 'tmp/'
 ROOT_DIR = os.path.dirname(os.path.abspath(os.curdir))
 KEEP_DOWNLOADS = True
 
-session = requests.Session()
 
+class DataImporter:
 
-def get_db_engine():
-    db_connector = DbConnector()
-    return db_connector.get_db_engine()
+    def __init__(self, files, root_dir, dest_folder, keep_downloads):
+        self.files = files
+        self.root_dir = root_dir
+        self.dest_folder = dest_folder
+        self.keep_downloads = keep_downloads
+        self.db_engine = DbConnector().get_db_engine()
 
+        self._create_download_folder()
 
-def main():
-    print('----------- DADOS ABERTOS - URBS -----------')
+    def _create_download_folder(self):
+        download_path = os.path.join(self.root_dir, self.dest_folder)
 
-    engine = get_db_engine()
-    remapper = FileToTableRemapper()
+        if not os.path.exists(download_path):
+            os.makedirs(download_path)
+            print('> Folder', self.dest_folder, 'created successfully!')
 
-    date = '2019_05_08'
-    files = [file for (file, included) in FILES.items() if included]
+    def import_files(self, date):
+        remapper = FileToTableRemapper()
+        session = requests.Session()
 
-    create_download_folder()
+        date_clean = date.replace('-', '_')
 
-    for file in files:
-        file_name = f'{date}_{file}.json.xz'
-        file_path = os.path.join(ROOT_DIR, FOLDER, file_name)
+        for file in self.files:
+            file_name = f'{date_clean}_{file}.json.xz'
+            file_path = os.path.join(ROOT_DIR, FOLDER, file_name)
 
-        print('> File', file)
+            print('> File', file)
 
+            self._download_file(file_path, session)
+            self._insert_db(file, file_path, remapper)
+
+        if not KEEP_DOWNLOADS:
+            shutil.rmtree(os.path.join(ROOT_DIR, FOLDER))
+
+    def _insert_db(self, file, file_path, remapper):
         table_name = remapper.get_table_name(file)
         columns_remapper = remapper.get_columns_remapper(file)
 
-        download_file(file_path)
+        print(f'\t> Inserting table `{table_name}`')
 
-        df = pd.read_json(file_path, compression='xz')
-        df.rename(columns_remapper, axis=1, inplace=True)
+        if file == 'veiculos':
+            with lzma.open(file_path, mode='rt') as f:
+                file_data = filter(lambda x: x != '\n', f.readlines())
 
-        df.to_sql(table_name, engine, if_exists='append', index=False)
+                data = []
+                for line in file_data:
+                    data.append(json.loads(line))
 
-    if not KEEP_DOWNLOADS:
-        shutil.rmtree(os.path.join(ROOT_DIR, FOLDER))
-
-
-def create_download_folder():
-    if not os.path.exists(os.path.join(ROOT_DIR, FOLDER)):
-        os.makedirs(os.path.join(ROOT_DIR, FOLDER))
-        print('> Folder', FOLDER, 'created successfully!')
-
-
-def read_file(file):
-    with lzma.open(file, mode='rt') as file_data:
-        file_name = file.split('/')[-1]
-        print('\t> Uncompressing file', file_name)
-
-        if 'veiculos' in file_name:
-            data = str(file_data.readlines())
+                df = pd.DataFrame(data)
         else:
-            data = file_data.read()
+            df = pd.read_json(file_path, compression='xz')
 
-        return json.loads(data)
+        df.rename(columns_remapper, axis=1, inplace=True)
+        df.to_sql(table_name, self.db_engine, if_exists='append', index=False)
 
+        print('\t\t- Insertion complete')
 
-def download_file(file_path):
-    # Download the file if it doesn't exist
-    if not os.path.exists(file_path):
-        print('\t> Downloading file')
-        download_start = time.time()
+    @staticmethod
+    def _download_file(file_path, session):
+        # Download the file if it doesn't exist
+        if not os.path.exists(file_path):
+            print('\t> Downloading file')
+            download_start = time.time()
 
-        url = f'{BASE_URL}/{file_path.split("/")[-1]}'
-        response = session.get(url)
+            url = f'{BASE_URL}/{file_path.split("/")[-1]}'
+            response = session.get(url)
 
-        with open(file_path, 'wb') as f:
-            f.write(response.content)
+            with open(file_path, 'wb') as f:
+                f.write(response.content)
 
-        download_end = time.time()
+            download_end = time.time()
 
-        print('\t\t- Download complete. Saved as', file_path)
-        print('\t\t- Time elapsed:', round(download_end - download_start, 2), 'secs.')
+            print('\t\t- Download complete. Saved as', file_path)
+            print('\t\t- Time elapsed:', round(download_end - download_start, 2), 'secs.')
 
-        # Prevent overloading the server
-        time.sleep(5)
-    else:
-        print('\t> The file already exists, no need to download it.')
-        print('\t\t- Path:', file_path)
+            # Prevent overloading the server
+            time.sleep(2)
+        else:
+            print('\t> The file already exists, no need to download it.')
+            print('\t\t- Path:', file_path)
 
 
 if __name__ == '__main__':
-    main()
+    print('----------- DADOS ABERTOS - URBS -----------')
+    with open(os.path.join(ROOT_DIR, 'settings', 'urbs_files.json'), 'r') as f:
+        files_dict = json.loads(f.read())
+        files_to_import = [file for (file, included) in files_dict.items() if included]
+
+    di = DataImporter(files_to_import, ROOT_DIR, dest_folder='tmp', keep_downloads=KEEP_DOWNLOADS)
+    di.import_files('2019-05-08')

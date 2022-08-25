@@ -1,0 +1,10 @@
+{
+  "trechosItinerarios": false,
+  "tabelaVeiculo": true,
+  "tabelaLinha": true,
+  "shapeLinha": true,
+  "pontosLinha": true,
+  "veiculos": true,
+  "pois": false,
+  "linhas": true
+}
