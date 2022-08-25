@@ -6,18 +6,19 @@ import time
 
 import pandas as pd
 import requests
-
 from sqlalchemy import create_engine
 
+from file_remapper import get_table_name, get_columns_remapper
+
 BASE_URL = 'https://dadosabertos.c3sl.ufpr.br/curitibaurbs'
-TABLES = {
-    'trechosItinerarios': True,
+FILES = {
+    'trechosItinerarios': False,
     'tabelaVeiculo': True,
     'tabelaLinha': True,
     'shapeLinha': True,
     'pontosLinha': True,
-    'veiculos': True,
-    'pois': True,
+    'veiculos': False,
+    'pois': False,
     'linhas': True,
 }
 FOLDER = 'tmp/'
@@ -40,24 +41,26 @@ def main():
 
     engine = get_db_engine()
 
-    date = '2022_08_17'
-    tables = [table for (table, included) in TABLES.items() if included]
+    date = '2019_05_08'
+    files = [file for (file, included) in FILES.items() if included]
 
     create_download_folder()
 
-    for table in tables:
-        file = f'{date}_{table}.json.xz'
-        file_path = os.path.join(ROOT_DIR, FOLDER, file)
+    for file in files:
+        file_name = f'{date}_{file}.json.xz'
+        file_path = os.path.join(ROOT_DIR, FOLDER, file_name)
 
         print('> File', file)
 
+        table_name = get_table_name(file)
+        columns_remapper = get_columns_remapper(file)
+
         download_file(file_path)
-        # data = read_file(file_path)
 
         df = pd.read_json(file_path, compression='xz')
-        print(df)
+        df.rename(columns_remapper, axis=1, inplace=True)
 
-        df.to_sql(file.split('.')[0], engine, if_exists='append')
+        df.to_sql(table_name, engine, if_exists='append', index=False)
 
     if not KEEP_DOWNLOADS:
         shutil.rmtree(os.path.join(ROOT_DIR, FOLDER))
@@ -98,6 +101,9 @@ def download_file(file_path):
 
         print('\t\t- Download complete. Saved as', file_path)
         print('\t\t- Time elapsed:', round(download_end - download_start, 2), 'secs.')
+
+        # Prevent overloading the server
+        time.sleep(5)
     else:
         print('\t> The file already exists, no need to download it.')
         print('\t\t- Path:', file_path)
