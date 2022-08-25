@@ -7,7 +7,7 @@ import time
 import pandas as pd
 import requests
 
-from file_remapper import get_table_name, get_columns_remapper
+from file_remapper import FileToTableRemapper
 from db_connection import DbConnector
 
 BASE_URL = 'https://dadosabertos.c3sl.ufpr.br/curitibaurbs'
@@ -37,6 +37,7 @@ def main():
     print('----------- DADOS ABERTOS - URBS -----------')
 
     engine = get_db_engine()
+    remapper = FileToTableRemapper()
 
     date = '2019_05_08'
     files = [file for (file, included) in FILES.items() if included]
@@ -49,8 +50,8 @@ def main():
 
         print('> File', file)
 
-        table_name = get_table_name(file)
-        columns_remapper = get_columns_remapper(file)
+        table_name = remapper.get_table_name(file)
+        columns_remapper = remapper.get_columns_remapper(file)
 
         download_file(file_path)
 
