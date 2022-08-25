@@ -6,9 +6,9 @@ import time
 
 import pandas as pd
 import requests
-from sqlalchemy import create_engine
 
 from file_remapper import get_table_name, get_columns_remapper
+from db_connection import DbConnector
 
 BASE_URL = 'https://dadosabertos.c3sl.ufpr.br/curitibaurbs'
 FILES = {
@@ -29,11 +29,8 @@ session = requests.Session()
 
 
 def get_db_engine():
-    with open(os.path.join(ROOT_DIR, 'keys', 'sql_connection.json'), 'r') as f:
-        db = json.loads(f.read())
-
-        return create_engine(
-            f"{db['type']}://{db['username']}:{db['password']}@{db['hostname']}:{db['port']}/{db['database']}")
+    db_connector = DbConnector()
+    return db_connector.get_db_engine()
 
 
 def main():
