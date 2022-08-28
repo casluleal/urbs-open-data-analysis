@@ -25,7 +25,3 @@ class FileToTableRemapper:
     def get_columns_remapper(self, file_name):
         remapper = self._get_remapper(file_name)
         return remapper['columns']
-
-
-if __name__ == '__main__':
-    t = FileToTableRemapper()
