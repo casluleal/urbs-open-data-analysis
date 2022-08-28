@@ -7,18 +7,19 @@ import time
 import pandas as pd
 import requests
 
-from src.db_connection import DbConnector
-from src.file_to_table_remapper import FileToTableRemapper
-from src.get_data import ROOT_DIR, FOLDER, KEEP_DOWNLOADS, BASE_URL
+from db_connection import DbConnector
+from file_to_table_remapper import FileToTableRemapper
 
 
 class DataImporter:
 
-    def __init__(self, files, root_dir, dest_folder, keep_downloads):
+    def __init__(self, files, base_url, root_dir, dest_folder, keep_downloads, table_prefix=''):
         self.files = files
+        self.base_url = base_url
         self.root_dir = root_dir
         self.dest_folder = dest_folder
         self.keep_downloads = keep_downloads
+        self.table_prefix = table_prefix
         self.db_engine = DbConnector().get_db_engine()
 
         self._create_download_folder()
@@ -31,30 +32,30 @@ class DataImporter:
             print('> Folder', self.dest_folder, 'created successfully!')
 
     def import_files(self, date):
-        remapper = FileToTableRemapper()
         session = requests.Session()
 
         date_clean = date.replace('-', '_')
 
         for file in self.files:
             file_name = f'{date_clean}_{file}.json.xz'
-            file_path = os.path.join(ROOT_DIR, FOLDER, file_name)
+            file_path = os.path.join(self.root_dir, self.dest_folder, file_name)
 
             print('> File', file)
 
             self._download_file(file_path, session)
-            self._insert_db(file, file_path, remapper)
+            self._insert_db(file, file_path)
 
-        if not KEEP_DOWNLOADS:
-            shutil.rmtree(os.path.join(ROOT_DIR, FOLDER))
+        if not self.keep_downloads:
+            shutil.rmtree(os.path.join(self.root_dir, self.dest_folder))
 
-    def _insert_db(self, file, file_path, remapper):
-        table_name = remapper.get_table_name(file)
-        columns_remapper = remapper.get_columns_remapper(file)
+    def _insert_db(self, file_name, file_path):
+        remapper = FileToTableRemapper()
+        table_name = self.table_prefix + remapper.get_table_name(file_name)
+        columns_remapper = remapper.get_columns_remapper(file_name)
 
-        print(f'\t> Inserting table `{table_name}`')
+        print(f'\t> Inserting into table `{table_name}`')
 
-        if file == 'veiculos':
+        if file_name == 'veiculos':
             with lzma.open(file_path, mode='rt') as f:
                 file_data = filter(lambda x: x != '\n', f.readlines())
 
@@ -71,14 +72,13 @@ class DataImporter:
 
         print('\t\t- Insertion complete')
 
-    @staticmethod
-    def _download_file(file_path, session):
+    def _download_file(self, file_path, session):
         # Download the file if it doesn't exist
         if not os.path.exists(file_path):
             print('\t> Downloading file')
             download_start = time.time()
 
-            url = f'{BASE_URL}/{file_path.split("/")[-1]}'
+            url = f'{self.base_url}/{file_path.split("/")[-1]}'
             response = session.get(url)
 
             with open(file_path, 'wb') as f:
@@ -90,7 +90,7 @@ class DataImporter:
             print('\t\t- Time elapsed:', round(download_end - download_start, 2), 'secs.')
 
             # Prevent overloading the server
-            time.sleep(2)
+            # time.sleep(2)
         else:
             print('\t> The file already exists, no need to download it.')
             print('\t\t- Path:', file_path)
