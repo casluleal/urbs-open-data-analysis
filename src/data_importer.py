@@ -31,7 +31,7 @@ class DataImporter:
             os.makedirs(download_path)
             print('> Folder', self.dest_folder, 'created successfully!')
 
-    def import_files(self, date):
+    def import_files(self, date, bus_lines=()):
         session = requests.Session()
 
         date_clean = date.replace('-', '_')
@@ -43,12 +43,12 @@ class DataImporter:
             print('> File', file)
 
             self._download_file(file_path, session)
-            self._insert_db(file, file_path)
+            self._insert_db(file, file_path, date, bus_lines)
 
         if not self.keep_downloads:
             shutil.rmtree(os.path.join(self.root_dir, self.dest_folder))
 
-    def _insert_db(self, file_name, file_path):
+    def _insert_db(self, file_name, file_path, date, bus_lines):
         remapper = FileToTableRemapper()
         table_name = self.table_prefix + remapper.get_table_name(file_name)
         columns_remapper = remapper.get_columns_remapper(file_name)
@@ -68,6 +68,11 @@ class DataImporter:
             df = pd.read_json(file_path, compression='xz')
 
         df.rename(columns_remapper, axis=1, inplace=True)
+        df['file_date'] = date
+        df['file_date'] = pd.to_datetime(df['file_date'])
+
+        df = df.query(f'bus_line_id in @bus_lines')
+
         df.to_sql(table_name, self.db_engine, if_exists='append', index=False)
 
         print('\t\t- Insertion complete')

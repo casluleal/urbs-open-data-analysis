@@ -23,7 +23,7 @@ Mapeamento de alterações nas nomenclaturas de tabelas e colunas.
 
 | **Original**      | **Remapeado** | **Tipo** | **Definição**            |
 |-------------------|---------------|----------|--------------------------|
-| COD               | id            | varchar  | Identificador da linha   |
+| COD               | bus_line_id   | varchar  | Identificador da linha   |
 | NOME              | name          | varchar  | Nome da linha            |
 | SOMENTE_CARTAO    | card_only     | bool     | Tipo de pagamento aceito |
 | CATEGORIA_SERVICO | category      | varchar  | Categoria da linha       |
@@ -68,7 +68,7 @@ Mapeamento de alterações nas nomenclaturas de tabelas e colunas.
 | HORA         | time          | text     | Horário de parada do ônibus                                               |
 | PONTO        | bus_stop_name | text     | Nome do ponto de ônibus                                                   |
 | DIA          | type_of_day   | int      | Tipo de dia - 1 = dia útil; 2 = sábado; 3 = domingo; 4 = feriado          |
-| NUM          | bus_stop_id   | bigint   | Identificador do ponto de ônibus                                          |
+| NUM          | bus_stop_id   | text     | Identificador do ponto de ônibus                                          |
 | TABELA       | timetable_id  | text     | Identificador da tabela de horários a qual o veículo está operando no dia |
 | ADAPT        | accessibility | text     | Tipo de equipamento de acessibilidade disponível na parada de ônibus      |
 | COD          | bus_line_id   | text     | Identificador da linha de ônibus                                          |
@@ -79,7 +79,7 @@ Mapeamento de alterações nas nomenclaturas de tabelas e colunas.
 
 | **Original** | **Remapeado** | **Tipo** | **Definição**                                  |
 |--------------|---------------|----------|------------------------------------------------|
-| COD_PONTO    | bus_stop_id   | bigint   | Identificador do ponto de ônibus               |
+| COD_PONTO    | bus_stop_id   | text     | Identificador do ponto de ônibus               |
 | COD_LINHA    | bus_line_id   | text     | Identificador da linha de ônibus               |
 | NOME_LINHA   | bus_line_name | text     | Nome da linha de ônibus                        |
 | VEICULO      | vehicle_id    | text     | Identificador do veículo                       |

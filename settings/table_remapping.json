@@ -2,7 +2,7 @@
   "linhas": {
     "table_name": "bus_line",
     "columns": {
-      "COD": "id",
+      "COD": "bus_line_id",
       "NOME": "name",
       "SOMENTE_CARTAO": "card_only",
       "CATEGORIA_SERVICO": "category",
