@@ -1,0 +1,8 @@
+{
+  "tabelaVeiculo": true,
+  "tabelaLinha": true,
+  "shapeLinha": true,
+  "pontosLinha": true,
+  "veiculos": true,
+  "linhas": true
+}
