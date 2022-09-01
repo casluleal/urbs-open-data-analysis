@@ -7,7 +7,7 @@ import time
 import pandas as pd
 import requests
 
-from db_connection import DbConnector
+from db_client import DbClient
 from file_to_table_remapper import FileToTableRemapper
 
 
@@ -20,7 +20,7 @@ class DataImporter:
         self.dest_folder = dest_folder
         self.keep_downloads = keep_downloads
         self.table_prefix = table_prefix
-        self.db_engine = DbConnector().get_db_engine()
+        self.db_client = DbClient()
 
         self._create_download_folder()
 
@@ -73,7 +73,7 @@ class DataImporter:
 
         df = df.query(f'bus_line_id in @bus_lines')
 
-        df.to_sql(table_name, self.db_engine, if_exists='append', index=False)
+        df.to_sql(table_name, self.db_client.get_db_engine(), if_exists='append', index=False)
 
         print('\t\t- Insertion complete')
 

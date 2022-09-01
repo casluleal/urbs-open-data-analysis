@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 ROOT_DIR = os.path.dirname(os.path.abspath(os.curdir))
 
 
-class DbConnector:
+class DbClient:
 
     def __init__(self):
         with open(os.path.join(ROOT_DIR, 'settings', 'sql_connection.json'), 'r') as f:
