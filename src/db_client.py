@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 ROOT_DIR = os.path.dirname(os.path.abspath(os.curdir))
 
 
-class DbConnector:
+class DbClient:
 
     def __init__(self):
         with open(os.path.join(ROOT_DIR, 'settings', 'sql_connection.json'), 'r') as f:
@@ -19,13 +19,15 @@ class DbConnector:
             self._port = db['port']
             self._database = db['database']
 
-        self._engine = None
-
-    def get_db_engine(self):
-        if self._engine is not None:
-            return self._engine
-
         login_str = f"{self._type}://{self._username}:{self._password}@{self._hostname}:{self._port}/{self._database}"
         self._engine = create_engine(login_str)
 
+    def get_db_engine(self):
         return self._engine
+
+    def run_sql_command(self, command):
+        with self._engine.connect() as conn:
+            conn = conn.execution_options(isolation_level='AUTOCOMMIT')
+            with conn.begin():
+                result = conn.execute(command)
+                return result

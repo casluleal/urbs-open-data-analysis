@@ -7,22 +7,25 @@ import time
 import pandas as pd
 import requests
 
-from db_connection import DbConnector
+from db_client import DbClient
 from file_to_table_remapper import FileToTableRemapper
 
 
 class DataImporter:
 
-    def __init__(self, files, base_url, root_dir, dest_folder, keep_downloads, table_prefix=''):
+    def __init__(self, files, base_url, root_dir, dest_folder, keep_downloads=True, drop_tables=False,
+                 tables_prefix=''):
         self.files = files
         self.base_url = base_url
         self.root_dir = root_dir
         self.dest_folder = dest_folder
         self.keep_downloads = keep_downloads
-        self.table_prefix = table_prefix
-        self.db_engine = DbConnector().get_db_engine()
+        self.drop_tables = drop_tables
+        self.tables_prefix = tables_prefix
+        self.db_client = DbClient()
 
         self._create_download_folder()
+        self._run_pre_insert_script()
 
     def _create_download_folder(self):
         download_path = os.path.join(self.root_dir, self.dest_folder)
@@ -48,9 +51,11 @@ class DataImporter:
         if not self.keep_downloads:
             shutil.rmtree(os.path.join(self.root_dir, self.dest_folder))
 
+        self._run_post_insert_script()
+
     def _insert_db(self, file_name, file_path, date, bus_lines):
         remapper = FileToTableRemapper()
-        table_name = self.table_prefix + remapper.get_table_name(file_name)
+        table_name = self.tables_prefix + remapper.get_table_name(file_name)
         columns_remapper = remapper.get_columns_remapper(file_name)
 
         print(f'\t> Inserting into table `{table_name}`')
@@ -73,7 +78,7 @@ class DataImporter:
 
         df = df.query(f'bus_line_id in @bus_lines')
 
-        df.to_sql(table_name, self.db_engine, if_exists='append', index=False)
+        df.to_sql(table_name, self.db_client.get_db_engine(), if_exists='append', index=False)
 
         print('\t\t- Insertion complete')
 
@@ -99,3 +104,32 @@ class DataImporter:
         else:
             print('\t> The file already exists, no need to download it.')
             print('\t\t- Path:', file_path)
+
+    def _run_post_insert_script(self):
+        print('> Pos-insert steps')
+
+        print('\t> Creating PostGIS fields')
+        self._run_sql_file(os.path.join(self.root_dir, 'db', '2_postgis_operators.sql'))
+        print('\t\t- PostGIS fields created successfully')
+
+    def _run_pre_insert_script(self):
+        print('> Pre-insert steps')
+
+        if self.drop_tables:
+            print('\t> Dropping tables')
+            self._run_sql_file(os.path.join(self.root_dir, 'db', '0_drop_tables.sql'))
+            print('\t\t- Tables dropped successfully')
+
+        print('\t> Creating tables (if they do not exist)')
+        self._run_sql_file(os.path.join(self.root_dir, 'db', '1_tables_ddl.sql'))
+        print('\t\t- Tables dropped successfully')
+
+    def _run_sql_file(self, sql_file_path):
+        with open(sql_file_path, 'r') as sql:
+            result = self.db_client.run_sql_command(sql.read())
+
+            try:
+                for row in result:
+                    print(row)
+            except Exception:
+                return
