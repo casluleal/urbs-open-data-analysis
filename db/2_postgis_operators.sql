@@ -16,7 +16,7 @@ UPDATE tcc_lucas_vehicle_position
 SET geom = st_setsrid(st_makepoint(longitude, latitude), 4326);
 
 -- create table bus_line_shape_unified
-DROP TABLE IF EXISTS vw_tcc_lucas_bus_line_shape_unified;
+DROP TABLE IF EXISTS tcc_lucas_bus_line_shape_unified CASCADE;
 CREATE TABLE IF NOT EXISTS tcc_lucas_bus_line_shape_unified AS
 SELECT bus_line_id,
        file_date,
