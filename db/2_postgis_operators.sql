@@ -15,15 +15,6 @@ SET geom = st_setsrid(st_makepoint(longitude, latitude), 4326);
 UPDATE tcc_lucas_vehicle_position
 SET geom = st_setsrid(st_makepoint(longitude, latitude), 4326);
 
--- create table bus_line_shape_unified
-DROP TABLE IF EXISTS tcc_lucas_bus_line_shape_unified CASCADE;
-CREATE TABLE IF NOT EXISTS tcc_lucas_bus_line_shape_unified AS
-SELECT bus_line_id,
-       file_date,
-       ST_MakeLine(geom ORDER BY id) AS geom
-FROM tcc_lucas_bus_line_shape
-GROUP BY bus_line_id, file_date;
-
 -- Create VIEWS for filtering duplicated data from different days
 DROP VIEW IF EXISTS vw_tcc_lucas_bus_line;
 CREATE VIEW vw_tcc_lucas_bus_line AS
@@ -34,10 +25,25 @@ SELECT DISTINCT bus_line_id,
                 color
 FROM tcc_lucas_bus_line;
 
-DROP VIEW IF EXISTS vw_tcc_lucas_bus_line_shape_unified;
-CREATE VIEW vw_tcc_lucas_bus_line_shape_unified AS
-SELECT DISTINCT bus_line_id,
-                geom
-FROM tcc_lucas_bus_line_shape_unified;
-
-
+DROP VIEW vw_tcc_lucas_bus_line_shape;
+CREATE VIEW vw_tcc_lucas_bus_line_shape AS
+WITH line_shape AS (
+    SELECT bus_line_id,
+           shape_id,
+           file_date,
+           ST_MakeLine(geom ORDER BY id) AS "geom"
+    FROM tcc_lucas_bus_line_shape
+    GROUP BY 1, 2, 3
+),
+     ranked_line_shape AS (
+         SELECT *,
+                st_length(geom)                    AS "length",
+                RANK() OVER (
+                    PARTITION BY bus_line_id, file_date
+                    ORDER BY st_length(geom) DESC) AS "rank"
+         FROM line_shape
+         ORDER BY st_length(geom) DESC
+     )
+SELECT bus_line_id, shape_id, file_date, geom, length
+FROM ranked_line_shape
+WHERE rank = 1;

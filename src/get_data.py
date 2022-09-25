@@ -4,7 +4,7 @@ import os
 from data_importer import DataImporter
 
 BASE_URL = 'https://dadosabertos.c3sl.ufpr.br/curitibaurbs'
-BUS_LINES = ('203', '020', '021')
+BUS_LINES = ('203', '020')
 DEST_FOLDER = 'tmp/'
 KEEP_DOWNLOADS = True
 ROOT_DIR = os.path.dirname(os.path.abspath(os.curdir))
