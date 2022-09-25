@@ -112,24 +112,30 @@ class DataImporter:
         self._run_sql_file(os.path.join(self.root_dir, 'db', '2_postgis_operators.sql'))
         print('\t\t- PostGIS fields created successfully')
 
-    def _run_pre_insert_script(self):
-        print('> Pre-insert steps')
+        print('\t> Setting indexes in fields')
+        self._run_sql_file(os.path.join(self.root_dir, 'db', '3_set_indexes.sql'))
+        print('\t\t- Indexes set successfully')
 
-        if self.drop_tables:
-            print('\t> Dropping tables')
-            self._run_sql_file(os.path.join(self.root_dir, 'db', '0_drop_tables.sql'))
-            print('\t\t- Tables dropped successfully')
 
-        print('\t> Creating tables (if they do not exist)')
-        self._run_sql_file(os.path.join(self.root_dir, 'db', '1_tables_ddl.sql'))
+def _run_pre_insert_script(self):
+    print('> Pre-insert steps')
+
+    if self.drop_tables:
+        print('\t> Dropping tables')
+        self._run_sql_file(os.path.join(self.root_dir, 'db', '0_drop_tables.sql'))
         print('\t\t- Tables dropped successfully')
 
-    def _run_sql_file(self, sql_file_path):
-        with open(sql_file_path, 'r') as sql:
-            result = self.db_client.run_sql_command(sql.read())
+    print('\t> Creating tables (if they do not exist)')
+    self._run_sql_file(os.path.join(self.root_dir, 'db', '1_tables_ddl.sql'))
+    print('\t\t- Tables dropped successfully')
 
-            try:
-                for row in result:
-                    print(row)
-            except Exception:
-                return
+
+def _run_sql_file(self, sql_file_path):
+    with open(sql_file_path, 'r') as sql:
+        result = self.db_client.run_sql_command(sql.read())
+
+        try:
+            for row in result:
+                print(row)
+        except Exception:
+            return
