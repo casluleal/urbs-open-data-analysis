@@ -51,7 +51,7 @@ class DataImporter:
         if not self.keep_downloads:
             shutil.rmtree(os.path.join(self.root_dir, self.dest_folder))
 
-        self._run_post_insert_script()
+        # self.run_post_insert_script()
 
     def _insert_db(self, file_name, file_path, date, bus_lines):
         remapper = FileToTableRemapper()
@@ -105,7 +105,7 @@ class DataImporter:
             print('\t> The file already exists, no need to download it.')
             print('\t\t- Path:', file_path)
 
-    def _run_post_insert_script(self):
+    def run_post_insert_script(self):
         print('> Pos-insert steps')
 
         print('\t> Creating PostGIS fields')
@@ -116,26 +116,24 @@ class DataImporter:
         self._run_sql_file(os.path.join(self.root_dir, 'db', '3_set_indexes.sql'))
         print('\t\t- Indexes set successfully')
 
+    def _run_pre_insert_script(self):
+        print('> Pre-insert steps')
 
-def _run_pre_insert_script(self):
-    print('> Pre-insert steps')
+        if self.drop_tables:
+            print('\t> Dropping tables')
+            self._run_sql_file(os.path.join(self.root_dir, 'db', '0_drop_tables.sql'))
+            print('\t\t- Tables dropped successfully')
 
-    if self.drop_tables:
-        print('\t> Dropping tables')
-        self._run_sql_file(os.path.join(self.root_dir, 'db', '0_drop_tables.sql'))
+        print('\t> Creating tables (if they do not exist)')
+        self._run_sql_file(os.path.join(self.root_dir, 'db', '1_tables_ddl.sql'))
         print('\t\t- Tables dropped successfully')
 
-    print('\t> Creating tables (if they do not exist)')
-    self._run_sql_file(os.path.join(self.root_dir, 'db', '1_tables_ddl.sql'))
-    print('\t\t- Tables dropped successfully')
+    def _run_sql_file(self, sql_file_path):
+        with open(sql_file_path, 'r') as sql:
+            result = self.db_client.run_sql_command(sql.read())
 
-
-def _run_sql_file(self, sql_file_path):
-    with open(sql_file_path, 'r') as sql:
-        result = self.db_client.run_sql_command(sql.read())
-
-        try:
-            for row in result:
-                print(row)
-        except Exception:
-            return
+            try:
+                for row in result:
+                    print(row)
+            except Exception:
+                return

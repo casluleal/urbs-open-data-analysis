@@ -1,8 +1,8 @@
 {
-  "type": "",
-  "hostname": "",
-  "port": 1234,
-  "username": "",
-  "password": "",
-  "database": ""
+  "type": "postgresql",
+  "hostname": "localhost",
+  "port": 5432,
+  "username": "postgres",
+  "password": "879254",
+  "database": "postgres"
 }

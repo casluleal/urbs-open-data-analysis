@@ -11,4 +11,3 @@ DROP TABLE IF EXISTS tcc_lucas_vehicle_position CASCADE;
 DROP TABLE IF EXISTS tcc_lucas_bus_line CASCADE;
 
 DROP TABLE IF EXISTS tcc_lucas_bus_line_shape_unified CASCADE;
-

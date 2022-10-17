@@ -25,7 +25,7 @@ SELECT DISTINCT bus_line_id,
                 color
 FROM tcc_lucas_bus_line;
 
-DROP VIEW vw_tcc_lucas_bus_line_shape;
+DROP VIEW IF EXISTS vw_tcc_lucas_bus_line_shape;
 CREATE VIEW vw_tcc_lucas_bus_line_shape AS
 WITH line_shape AS (
     SELECT bus_line_id,
