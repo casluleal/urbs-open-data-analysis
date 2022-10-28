@@ -1,6 +1,7 @@
 --------------- SETTING CURITIBA'S TIMEZONE ---------------
 SET TIMEZONE = 'America/Sao_Paulo';
 
+CREATE TABLE tcc_lucas_matches_vs_real_2019_05_02_bus_line_020 AS
 --------------- BUS LINE ID ---------------
 WITH veiculos AS (
     SELECT
@@ -14,7 +15,7 @@ WITH veiculos AS (
         geom,
         -- data do arquivo
         file_date
-    FROM tcc_lucas_vehicle_position_2019_05_03_bus_line_020
+    FROM tcc_lucas_vehicle_position_2019_05_02_bus_line_020
 ),
      pontos_linha AS (
          SELECT
@@ -41,7 +42,7 @@ WITH veiculos AS (
              -- a data do arquivo que originou o dado
              file_date
          FROM tcc_lucas_bus_line_stop
-         WHERE file_date = '2019-05-03'
+         WHERE file_date = '2019-05-02'
            AND bus_line_id = '020'
      ),
      shape_linha AS (
@@ -53,7 +54,7 @@ WITH veiculos AS (
                 bus_line_id,
                 file_date
          FROM tcc_lucas_bus_line_shape
-         WHERE file_date = '2019-05-03'
+         WHERE file_date = '2019-05-02'
            AND bus_line_id = '020'
      ),
      tabela_veiculo AS (
@@ -61,12 +62,12 @@ WITH veiculos AS (
                 bus_line_name,
                 vehicle_id,
                 "time",
-                ("time" + file_date)::TIMESTAMPTZ programmed_timestamp,
+                ("time" + file_date)::timestamptz programmed_timestamp,
                 timetable_id,
                 bus_stop_id,
                 file_date
          FROM tcc_lucas_bus_vehicle_timetable
-         WHERE file_date = '2019-05-03'
+         WHERE file_date = '2019-05-02'
            AND bus_line_id = '020'
      ),
 --------------- TABLE JOINS ---------------
@@ -313,7 +314,7 @@ WITH veiculos AS (
               LATERAL (
                   SELECT GREATEST("time" - LEAST(dif_lag / 2, "time"::INTERVAL),
                                   '00:00:00'::TIME WITH TIME ZONE) +
-                         file_date                                    left_bound,
+                         file_date                             left_bound,
                          LEAST("time" + LEAST(dif_lead / 2, '23:59:59'::INTERVAL - "time"),
                                '23:59:59'::TIME WITH TIME ZONE) + file_date right_bound
                   ) l1
