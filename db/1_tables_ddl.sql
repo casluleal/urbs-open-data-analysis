@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS tcc_lucas_bus_vehicle_timetable
     bus_line_id   TEXT,
     bus_line_name TEXT,
     vehicle_id    TEXT,
-    time          TEXT,
+    time          TIME,
     timetable_id  TEXT,
     bus_stop_id   TEXT,
     file_date     TIMESTAMP
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS tcc_lucas_bus_vehicle_timetable
 CREATE TABLE IF NOT EXISTS tcc_lucas_bus_line_timetable
 (
     id            SERIAL PRIMARY KEY,
-    time          TEXT,
+    time          TIME,
     bus_stop_name TEXT,
     type_of_day   INT,
     bus_stop_id   TEXT,
