@@ -78,7 +78,7 @@ WITH veiculos AS (
                 shape_id,
                 st_makeline(geom ORDER BY id) shape_polyline_geom
          FROM shape_linha
-         GROUP BY 1, 2, 3
+         GROUP BY file_date, bus_line_id, shape_id
      ),
      shapes_and_sentidos AS (
          SELECT file_date,
@@ -153,8 +153,8 @@ WITH veiculos AS (
      pontos_linha_and_azimuths AS (
          SELECT *
          FROM (
-                  SELECT pl.id                                 "pl_id",
-                         pl.*,
+                  SELECT pl.id                                 "id",
+                         pl.*   ,
                          sa.id                                 "sa_id",
                          sa.shape_id,
                          shape_line_geom,
@@ -175,7 +175,7 @@ WITH veiculos AS (
          WHERE row_number = 1
          ORDER BY bus_line_id,
                   direction,
-                  sequence
+                  "sequence"
      ),
 -- **************** VEICULOS WITH AZIMUTHS ****************
      veiculos_with_azimuth AS (
@@ -221,7 +221,7 @@ WITH veiculos AS (
                 pa.type,
                 pa.itinerary_id,
                 geom,
-                pa.sequence                                   shape_sequence,
+                pa.id                                         shape_sequence,
                 pa.shape_id,
                 pa.shape_line_geom,
                 pa.shape_line_azimuth                         bus_stop_azimuth,
@@ -233,7 +233,8 @@ WITH veiculos AS (
                 MIN(l1.distance_bus_to_stop) OVER w_following min_distance_bus_to_stop_following
          FROM veiculos_with_azimuth va -- O onibus e o ponto de onibus precisam ser da mesma linha
                   JOIN pontos_linha_and_azimuths pa
-                       ON va.bus_line_id = pa.bus_line_id
+                       ON TRUE
+                           AND va.bus_line_id = pa.bus_line_id
                            AND va.file_date = pa.file_date,
               LATERAL (
                   SELECT
@@ -314,7 +315,7 @@ WITH veiculos AS (
               LATERAL (
                   SELECT GREATEST("time" - LEAST(dif_lag / 2, "time"::INTERVAL),
                                   '00:00:00'::TIME WITH TIME ZONE) +
-                         file_date                             left_bound,
+                         file_date                                          left_bound,
                          LEAST("time" + LEAST(dif_lead / 2, '23:59:59'::INTERVAL - "time"),
                                '23:59:59'::TIME WITH TIME ZONE) + file_date right_bound
                   ) l1
