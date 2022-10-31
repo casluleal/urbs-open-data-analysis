@@ -1,4 +1,6 @@
-CREATE TABLE tcc_lucas_bus_line_stop_azimuth_2019_05_01_bus_line_020 AS
+{%- macro azimutes(bus_line, file_year, file_month, file_day) -%}
+
+CREATE TABLE IF NOT EXISTS tcc_lucas_bus_line_stop_azimuth_{{ file_year }}_{{ file_month }}_{{ file_day }}_bus_line_{{ bus_line }} AS
 WITH pontos_linha AS (
     SELECT
         -- (index) índice do ponto
@@ -24,8 +26,8 @@ WITH pontos_linha AS (
         -- a data do arquivo que originou o dado
         file_date
     FROM tcc_lucas_bus_line_stop
-    WHERE file_date = '2019-05-01'
-      AND bus_line_id = '020'
+    WHERE file_date = '{{ file_year }}-{{ file_month }}-{{ file_day }}'
+      AND bus_line_id = '{{ bus_line }}'
 ),
      shape_linha AS (
          SELECT id,
@@ -36,8 +38,8 @@ WITH pontos_linha AS (
                 bus_line_id,
                 file_date
          FROM tcc_lucas_bus_line_shape
-         WHERE file_date = '2019-05-08'
-           AND bus_line_id = '203'
+         WHERE file_date = '{{ file_year }}-{{ file_month }}-{{ file_day }}'
+           AND bus_line_id = '{{ bus_line }}'
      ),
      shapes_and_sentidos AS (
          SELECT file_date,
@@ -74,7 +76,7 @@ WITH pontos_linha AS (
                                 LATERAL (
                                     SELECT st_distance(pl.geom, sap.geom) AS st_distance
                                     ) x1
-                           WHERE pl.bus_line_id = '203'
+                           WHERE pl.bus_line_id = '{{ bus_line }}'
                            ORDER BY pl.file_date,
                                     pl.bus_line_id,
                                     pl.direction,
@@ -129,7 +131,7 @@ WITH pontos_linha AS (
                            JOIN shapes_and_azimuths sa
                                 ON sa.bus_line_id = ss.bus_line_id
                                     AND sa.shape_id = ss.shape_id
-                  WHERE pl.bus_line_id = '203'
+                  WHERE pl.bus_line_id = '{{ bus_line }}'
               ) AS q1
          WHERE row_number = 1
          ORDER BY bus_line_id,
@@ -138,3 +140,5 @@ WITH pontos_linha AS (
      )
 SELECT *
 FROM pontos_linha_and_azimuths;
+
+{%- endmacro -%}

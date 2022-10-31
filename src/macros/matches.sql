@@ -1,4 +1,6 @@
-CREATE TABLE tcc_lucas_matches_2019_05_08_bus_line_203 AS
+{%- macro matches(bus_line, file_year, file_month, file_day) -%}
+
+CREATE TABLE IF NOT EXISTS tcc_lucas_matches_{{ file_year }}_{{ file_month }}_{{ file_day }}_bus_line_{{ bus_line }} AS
 WITH veiculos AS (
     SELECT
         -- codigo da linha de ônibus
@@ -11,7 +13,7 @@ WITH veiculos AS (
         geom,
         -- data do arquivo
         file_date
-    FROM tcc_lucas_vehicle_position_2019_05_08_bus_line_203
+    FROM tcc_lucas_vehicle_position_{{ file_year }}_{{ file_month }}_{{ file_day }}_bus_line_{{ bus_line }}
 ),
 -- **************** VEICULOS WITH AZIMUTHS ****************
      veiculos_with_azimuth AS (
@@ -36,7 +38,7 @@ WITH veiculos AS (
                    bus_line_id,
                    vehicle_id,
                    timestamp
-                      ) --LIMIT 100
+                      )
      ),
      va_pa AS (
          SELECT va.file_date,
@@ -68,7 +70,7 @@ WITH veiculos AS (
                 MIN(l1.distance_bus_to_stop) OVER w_preceding min_distance_bus_to_stop_preceding,
                 MIN(l1.distance_bus_to_stop) OVER w_following min_distance_bus_to_stop_following
          FROM veiculos_with_azimuth va -- O onibus e o ponto de onibus precisam ser da mesma linha
-                  JOIN tcc_lucas_bus_line_stop_azimuth_2019_05_08_bus_line_203 sa
+                  JOIN tcc_lucas_bus_line_stop_azimuth_{{ file_year }}_{{ file_month }}_{{ file_day }}_bus_line_{{ bus_line }} sa
                        ON va.bus_line_id = sa.bus_line_id AND va.file_date = sa.file_date,
               LATERAL (
                   SELECT
@@ -131,3 +133,5 @@ WITH veiculos AS (
      )
 SELECT *
 FROM chegadas;
+
+{%- endmacro -%}

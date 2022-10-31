@@ -11,6 +11,23 @@ ROOT_DIR = os.path.dirname(os.path.abspath(os.curdir))
 DROP_TABLES = True
 TABLES_PREFIX = 'tcc_lucas_'
 
+
+def run_algorithm_multiple_times(model_file, dates):
+    for date in dates:
+        for bus_line in BUS_LINES:
+            file_year = date[:4]
+            file_month = date[5:7]
+            file_day = date[8:]
+
+            di.run_algorithm(
+                os.path.join(ROOT_DIR, 'src', 'models', model_file),
+                bus_line=bus_line,
+                file_year=file_year,
+                file_month=file_month,
+                file_day=file_day
+            )
+
+
 if __name__ == '__main__':
     print('----------- DADOS ABERTOS - URBS -----------')
     with open(os.path.join(ROOT_DIR, 'settings', 'urbs_files.json'), 'r') as f:
@@ -26,7 +43,11 @@ if __name__ == '__main__':
                       KEEP_DOWNLOADS,
                       DROP_TABLES,
                       TABLES_PREFIX)
-    for date in dates:
-        di.import_files(date, BUS_LINES)
+    # for date in dates:
+    #     di.import_files(date, BUS_LINES)
 
-    di.run_post_insert_script()
+    # di.run_post_insert_script()
+
+    # run_algorithm_multiple_times('1_azimutes.sql', dates)
+    # run_algorithm_multiple_times('2_matches.sql', dates)
+    run_algorithm_multiple_times('3_matches_vs_real.sql', dates)

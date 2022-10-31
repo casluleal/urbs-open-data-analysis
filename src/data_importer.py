@@ -9,6 +9,7 @@ import requests
 
 from db_client import DbClient
 from file_to_table_remapper import FileToTableRemapper
+from render import render_sql_template
 
 
 class DataImporter:
@@ -25,7 +26,7 @@ class DataImporter:
         self.db_client = DbClient()
 
         self._create_download_folder()
-        self._run_pre_insert_script()
+        # self._run_pre_insert_script()
 
     def _create_download_folder(self):
         download_path = os.path.join(self.root_dir, self.dest_folder)
@@ -116,6 +117,10 @@ class DataImporter:
         self._run_sql_file(os.path.join(self.root_dir, 'db', '3_set_indexes.sql'))
         print('\t\t- Indexes set successfully')
 
+        print('\t> Partitioning vehicle position tables')
+        self._run_sql_file(os.path.join(self.root_dir, 'db', '4_table_partitioning.sql'))
+        print('\t\t- Tables partitioned successfully')
+
     def _run_pre_insert_script(self):
         print('> Pre-insert steps')
 
@@ -137,3 +142,20 @@ class DataImporter:
                     print(row)
             except Exception:
                 return
+
+    def run_algorithm(self, model_path: str, **kwargs) -> None:
+        print('> Running script', model_path, '-', kwargs)
+
+        sql_script = render_sql_template(model_path, **kwargs)
+        with open('out.sql', 'w') as f:
+            f.write(sql_script)
+
+        result = self.db_client.run_sql_command(sql_script)
+
+        try:
+            for row in result:
+                print(row)
+        except Exception:
+            return
+
+        print('\t\t- Script finished successfully')

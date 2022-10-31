@@ -1,6 +1,7 @@
 import json
 import os
 
+import sqlalchemy
 from sqlalchemy import create_engine
 
 ROOT_DIR = os.path.dirname(os.path.abspath(os.curdir))
@@ -28,6 +29,8 @@ class DbClient:
     def run_sql_command(self, command):
         with self._engine.connect() as conn:
             conn = conn.execution_options(isolation_level='AUTOCOMMIT')
+
+            command = sqlalchemy.text(command)
             with conn.begin():
                 result = conn.execute(command)
                 return result

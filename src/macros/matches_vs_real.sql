@@ -1,7 +1,9 @@
+{%- macro matches_vs_real(bus_line, file_year, file_month, file_day) -%}
+
 --------------- SETTING CURITIBA'S TIMEZONE ---------------
 SET TIMEZONE = 'America/Sao_Paulo';
 
-CREATE TABLE tcc_lucas_matches_vs_real_2019_05_02_bus_line_020 AS
+CREATE TABLE tcc_lucas_matches_vs_real_{{ file_year }}_{{ file_month }}_{{ file_day }}_bus_line_{{ bus_line }} AS
 --------------- BUS LINE ID ---------------
 WITH veiculos AS (
     SELECT
@@ -15,7 +17,7 @@ WITH veiculos AS (
         geom,
         -- data do arquivo
         file_date
-    FROM tcc_lucas_vehicle_position_2019_05_02_bus_line_020
+    FROM tcc_lucas_vehicle_position_{{ file_year }}_{{ file_month }}_{{ file_day }}_bus_line_{{ bus_line }}
 ),
      pontos_linha AS (
          SELECT
@@ -42,8 +44,8 @@ WITH veiculos AS (
              -- a data do arquivo que originou o dado
              file_date
          FROM tcc_lucas_bus_line_stop
-         WHERE file_date = '2019-05-02'
-           AND bus_line_id = '020'
+         WHERE file_date = '{{ file_year }}-{{ file_month }}-{{ file_day }}'
+           AND bus_line_id = '{{ bus_line }}'
      ),
      shape_linha AS (
          SELECT id,
@@ -54,8 +56,8 @@ WITH veiculos AS (
                 bus_line_id,
                 file_date
          FROM tcc_lucas_bus_line_shape
-         WHERE file_date = '2019-05-02'
-           AND bus_line_id = '020'
+         WHERE file_date = '{{ file_year }}-{{ file_month }}-{{ file_day }}'
+           AND bus_line_id = '{{ bus_line }}'
      ),
      tabela_veiculo AS (
          SELECT bus_line_id,
@@ -67,8 +69,8 @@ WITH veiculos AS (
                 bus_stop_id,
                 file_date
          FROM tcc_lucas_bus_vehicle_timetable
-         WHERE file_date = '2019-05-02'
-           AND bus_line_id = '020'
+         WHERE file_date = '{{ file_year }}-{{ file_month }}-{{ file_day }}'
+           AND bus_line_id = '{{ bus_line }}'
      ),
 --------------- TABLE JOINS ---------------
 --------------- SHAPES WITH AZIMUTHS ALGORITHMS ---------------
@@ -115,7 +117,7 @@ WITH veiculos AS (
                                 LATERAL (
                                     SELECT st_distance(pl.geom, sap.shape_polyline_geom) AS st_distance
                                     ) x1
-                           WHERE pl.bus_line_id = '020'
+                           WHERE pl.bus_line_id = '{{ bus_line }}'
                            ORDER BY pl.file_date,
                                     pl.bus_line_id,
                                     pl.direction,
@@ -170,7 +172,7 @@ WITH veiculos AS (
                       AND ss.direction = pl.direction
                            JOIN shapes_and_azimuths sa ON sa.bus_line_id = ss.bus_line_id
                       AND sa.shape_id = ss.shape_id
-                  WHERE pl.bus_line_id = '020'
+                  WHERE pl.bus_line_id = '{{ bus_line }}'
               ) AS q1
          WHERE row_number = 1
          ORDER BY bus_line_id,
@@ -221,7 +223,7 @@ WITH veiculos AS (
                 pa.type,
                 pa.itinerary_id,
                 geom,
-                pa.sequence                                   shape_sequence,
+                pa.sequence                                         shape_sequence,
                 pa.shape_id,
                 pa.shape_line_geom,
                 pa.shape_line_azimuth                         bus_stop_azimuth,
@@ -252,7 +254,7 @@ WITH veiculos AS (
                           )                                                                  distance_bus_to_stop,
                       -- Calcula a diferença entre o azimute da trajetória e o azimute do ponto de onibus
                       (
-                          va.trajectory_azimuth - pa.shape_line_azimuth + PI() + PI() * 2
+                                  va.trajectory_azimuth - pa.shape_line_azimuth + PI() + PI() * 2
                           ) :: NUMERIC % (PI() * 2) :: NUMERIC - PI()                        angle_dif,
                       -- Calcula a estimativa do momento passado pelo onibus
                       va.prev_dthr + (va.time_dif * l0.ratio_closest_point_vehicle_bus_stop) bus_arrival_time
@@ -329,7 +331,7 @@ WITH veiculos AS (
              AND c.bus_line_id = tvb.bus_line_id
              AND c.vehicle_id = tvb.vehicle_id
              AND c.bus_stop_id = tvb.bus_stop_id
---AND c.bus_arrival_time BETWEEN tvb.left_bound AND tvb.right_bound 
+--AND c.bus_arrival_time BETWEEN tvb.left_bound AND tvb.right_bound
              AND c.bus_arrival_time >= tvb.left_bound
              AND c.bus_arrival_time < tvb.right_bound
      ),
@@ -363,3 +365,5 @@ WITH veiculos AS (
      )
 SELECT *
 FROM chegadas_com_teoricos_filtrados
+
+{%- endmacro -%}
