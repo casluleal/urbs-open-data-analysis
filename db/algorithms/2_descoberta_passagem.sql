@@ -31,12 +31,10 @@ WITH veiculos AS (
              ORDER BY
                  timestamp
              )
-         ORDER BY (
-                   file_date,
-                   bus_line_id,
-                   vehicle_id,
-                   timestamp
-                      ) --LIMIT 100
+         ORDER BY file_date,
+                  bus_line_id,
+                  vehicle_id,
+                  timestamp
      ),
      va_pa AS (
          SELECT va.file_date,

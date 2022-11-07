@@ -52,8 +52,6 @@ class DataImporter:
         if not self.keep_downloads:
             shutil.rmtree(os.path.join(self.root_dir, self.dest_folder))
 
-        # self.run_post_insert_script()
-
     def _insert_db(self, file_name, file_path, date, bus_lines):
         remapper = FileToTableRemapper()
         table_name = self.tables_prefix + remapper.get_table_name(file_name)
@@ -76,6 +74,9 @@ class DataImporter:
         df.rename(columns_remapper, axis=1, inplace=True)
         df['file_date'] = date
         df['file_date'] = pd.to_datetime(df['file_date'])
+
+        if file_name == 'veiculos':
+            df['timestamp'] = pd.to_datetime(df['timestamp'], dayfirst=True)
 
         df = df.query(f'bus_line_id in @bus_lines')
 
@@ -100,8 +101,6 @@ class DataImporter:
             print('\t\t- Download complete. Saved as', file_path)
             print('\t\t- Time elapsed:', round(download_end - download_start, 2), 'secs.')
 
-            # Prevent overloading the server
-            # time.sleep(2)
         else:
             print('\t> The file already exists, no need to download it.')
             print('\t\t- Path:', file_path)
@@ -110,11 +109,11 @@ class DataImporter:
         print('> Pos-insert steps')
 
         print('\t> Creating PostGIS fields')
-        self._run_sql_file(os.path.join(self.root_dir, 'db', '2_postgis_operators.sql'))
+        # self._run_sql_file(os.path.join(self.root_dir, 'db', '2_postgis_operators.sql'))
         print('\t\t- PostGIS fields created successfully')
 
         print('\t> Setting indexes in fields')
-        self._run_sql_file(os.path.join(self.root_dir, 'db', '3_set_indexes.sql'))
+        # self._run_sql_file(os.path.join(self.root_dir, 'db', '3_set_indexes.sql'))
         print('\t\t- Indexes set successfully')
 
         print('\t> Partitioning vehicle position tables')
@@ -147,9 +146,6 @@ class DataImporter:
         print('> Running script', model_path, '-', kwargs)
 
         sql_script = render_sql_template(model_path, **kwargs)
-        with open('out.sql', 'w') as f:
-            f.write(sql_script)
-
         result = self.db_client.run_sql_command(sql_script)
 
         try:

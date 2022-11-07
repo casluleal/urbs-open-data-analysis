@@ -8,7 +8,7 @@ BUS_LINES = ('203', '020')
 DEST_FOLDER = 'tmp/'
 KEEP_DOWNLOADS = True
 ROOT_DIR = os.path.dirname(os.path.abspath(os.curdir))
-DROP_TABLES = True
+DROP_TABLES = False
 TABLES_PREFIX = 'tcc_lucas_'
 
 
@@ -18,7 +18,18 @@ def run_algorithm_multiple_times(model_file, dates):
             file_year = date[:4]
             file_month = date[5:7]
             file_day = date[8:]
+            file_next_day = str(int(file_day) + 1).zfill(2)
 
+        if 'matches_vs_real' in model_file:
+            di.run_algorithm(
+                os.path.join(ROOT_DIR, 'src', 'models', model_file),
+                bus_line=bus_line,
+                file_year=file_year,
+                file_month=file_month,
+                file_day=file_day,
+                file_next_day=file_next_day
+            )
+        else:
             di.run_algorithm(
                 os.path.join(ROOT_DIR, 'src', 'models', model_file),
                 bus_line=bus_line,
@@ -43,9 +54,10 @@ if __name__ == '__main__':
                       KEEP_DOWNLOADS,
                       DROP_TABLES,
                       TABLES_PREFIX)
+
     # for date in dates:
     #     di.import_files(date, BUS_LINES)
-
+    #
     # di.run_post_insert_script()
 
     # run_algorithm_multiple_times('1_azimutes.sql', dates)
