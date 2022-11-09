@@ -1,26 +1,48 @@
-CREATE TABLE tcc_lucas_matches_2019_05_08_bus_line_203 AS
-WITH veiculos AS (
-    SELECT
-        -- codigo da linha de ônibus
-        bus_line_id,
-        -- codigo do veiculo
-        vehicle_id,
-        -- data hora da mensuração
-        timestamp,
-        -- localização
-        geom,
-        -- data do arquivo
-        file_date
-    FROM tcc_lucas_vehicle_position_2019_05_08_bus_line_203
+{%- macro matches(table_prefix, bus_line, file_year, file_month, file_day) -%}
+
+CREATE TABLE {{table_prefix}}matches_{{file_year}}_{{file_month}}_{{file_day}}_bus_line_{{bus_line}} AS
+WITH chosen_bus_lines AS (
+    SELECT *
+    FROM (
+             VALUES ('{{bus_line}}')
+         ) AS b (bus_line_id)
 ),
+     chosen_dates AS (
+         SELECT *
+         FROM (
+                  VALUES ('{{file_year}}-{{file_month}}-{{file_day}}'::DATE)
+              ) AS d (file_date)
+     ),
+     veiculos AS (
+         SELECT
+             -- codigo da linha de ônibus
+             bus_line_id,
+             -- codigo do veiculo
+             vehicle_id,
+             -- data hora da mensuração
+             timestamp,
+             -- localização
+             geom,
+             -- data do arquivo
+             file_date
+         FROM {{table_prefix}}vehicle_position
+         WHERE file_date IN (
+             SELECT *
+             FROM chosen_dates
+         )
+           AND bus_line_id IN (
+             SELECT *
+             FROM chosen_bus_lines
+         )
+     ),
 -- **************** VEICULOS WITH AZIMUTHS ****************
      veiculos_with_azimuth AS (
          SELECT file_date,
                 bus_line_id,
                 vehicle_id,
-                LAG(timestamp) OVER w               AS prev_dthr,
+                LAG(timestamp) OVER w               AS prev_timestamp,
                 timestamp,
-                timestamp - LAG(timestamp) OVER w   AS time_dif,
+                timestamp - LAG(timestamp) OVER w   AS time_diff,
                 st_makeline(LAG(geom) OVER w, geom) AS trajectory_line,
                 st_azimuth(LAG(geom) OVER w, geom)  AS trajectory_azimuth
          FROM veiculos WINDOW w AS (
@@ -40,10 +62,10 @@ WITH veiculos AS (
          SELECT va.file_date,
                 va.bus_line_id,
                 va.vehicle_id,
-                va.prev_dthr,
+                va.prev_timestamp,
                 l1.bus_arrival_time,
                 va.timestamp,
-                va.time_dif,
+                va.time_diff,
                 va.trajectory_line,
                 va.trajectory_azimuth,
                 id                                            bus_stop_index,
@@ -66,7 +88,7 @@ WITH veiculos AS (
                 MIN(l1.distance_bus_to_stop) OVER w_preceding min_distance_bus_to_stop_preceding,
                 MIN(l1.distance_bus_to_stop) OVER w_following min_distance_bus_to_stop_following
          FROM veiculos_with_azimuth va -- O onibus e o ponto de onibus precisam ser da mesma linha
-                  JOIN tcc_lucas_bus_line_stop_azimuth_2019_05_08_bus_line_203 sa
+                  JOIN {{table_prefix}}bus_line_stop_azimuth_{{file_year}}_{{file_month}}_{{file_day}}_bus_line_{{bus_line}} sa
                        ON va.bus_line_id = sa.bus_line_id AND va.file_date = sa.file_date,
               LATERAL (
                   SELECT
@@ -81,18 +103,16 @@ WITH veiculos AS (
                       st_distance(
                               l0.closest_point_vehicle_bus_stop :: geography,
                               sa.geom :: geography
-                          )                                                                  distance_bus_to_stop,
+                          )                                                                        distance_bus_to_stop,
                       -- Calcula a diferença entre o azimute da trajetória e o azimute do ponto de onibus
                       (
-                          va.trajectory_azimuth - sa.shape_line_azimuth + PI() + PI() * 2
-                          ) :: NUMERIC % (PI() * 2) :: NUMERIC - PI()                        angle_dif,
+                                  va.trajectory_azimuth - sa.shape_line_azimuth + PI() + PI() * 2
+                          ) :: NUMERIC % (PI() * 2) :: NUMERIC - PI()                              angle_dif,
                       -- Calcula a estimativa do momento passado pelo onibus
-                      va.prev_dthr + (va.time_dif * l0.ratio_closest_point_vehicle_bus_stop) bus_arrival_time
+                      va.prev_timestamp + (va.time_diff * l0.ratio_closest_point_vehicle_bus_stop) bus_arrival_time
                   ) l1
-         WHERE TRUE                       -- A distância do ônibus até o ponto de ônibus precisa ser menor que 20m
-           AND distance_bus_to_stop <= 40 -- A diferença em graus entre os azimutes precisa estar entre -45 e +45
-           AND angle_dif BETWEEN - PI() / 4
-             AND PI() / 4
+         WHERE distance_bus_to_stop <= 40                   -- A distância do ônibus até o ponto de ônibus precisa ser menor que 40m
+           AND angle_dif BETWEEN (-PI() / 4) AND (PI() / 4) -- A diferença em graus entre os azimutes precisa estar entre -45 e +45
              WINDOW w_preceding AS (
                  PARTITION BY
                      va.file_date,
@@ -119,8 +139,7 @@ WITH veiculos AS (
      chegadas AS (
          SELECT *
          FROM va_pa
-         WHERE TRUE
-           AND distance_bus_to_stop < COALESCE(min_distance_bus_to_stop_preceding, '+Infinity')
+         WHERE distance_bus_to_stop < COALESCE(min_distance_bus_to_stop_preceding, '+Infinity')
            AND distance_bus_to_stop <= COALESCE(min_distance_bus_to_stop_following, '+Infinity')
          ORDER BY file_date,
                   bus_line_id,
@@ -129,3 +148,5 @@ WITH veiculos AS (
      )
 SELECT *
 FROM chegadas;
+
+{%- endmacro -%}

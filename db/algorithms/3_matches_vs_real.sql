@@ -1,90 +1,106 @@
 --------------- SETTING CURITIBA'S TIMEZONE ---------------
 SET TIMEZONE = 'America/Sao_Paulo';
 
-CREATE TABLE tcc_lucas_matches_vs_real_2019_05_02_bus_line_020 AS
+CREATE TABLE tcc_lucas_matches_vs_teoricos_2019_05_01_bus_line_203 AS
+    --------------- PARAMETERS ---------------
+-- Operando sobre as tabelas de dia _2019_05_13
+-- Operando sobre veiculo de dia _2019_05_14
+-- Operando sobre o id 216
+--INSERT INTO chegadas_filtradas
 --------------- BUS LINE ID ---------------
-WITH veiculos AS (
-    SELECT
-        -- codigo da linha de ônibus
-        bus_line_id,
-        -- codigo do veiculo
-        vehicle_id,
-        -- data hora da mensuração
-        timestamp,
-        -- localização
-        geom,
-        -- data do arquivo
-        file_date
-    FROM tcc_lucas_vehicle_position_2019_05_02_bus_line_020
+WITH chosen_bus_lines AS (
+    SELECT *
+    FROM (
+             VALUES ('203')
+         ) bus_lines (bus_line_id)
 ),
+--------------- PURE TABLES ---------------
+     veiculos AS (
+         SELECT
+             -- codigo da linha de ônibus
+             bus_line_id,
+             -- codigo do veiculo
+             vehicle_id,
+             -- data hora da mensuração
+             timestamp,
+             -- localização
+             geom,
+             -- data do arquivo
+             file_date
+         FROM tcc_lucas_vehicle_position_2019_05_02_bus_line_203
+     ),
      pontos_linha AS (
          SELECT
              -- (index) índice do ponto
-             id,
+             id        file_index,
              -- (nome) nome do ponto
-             name,
+             name      bus_stop_name,
              -- (num) código do ponto
              bus_stop_id,
              -- (seq) índice do ponto no percurso
-             sequence,
+             sequence  seq,
              -- (grupo) grupo a qual este ponto de ônibus faz parte, onde pessoas podem pegar outros ônibus com uma mesma passagem
-             "group",
+             "group"   bus_stop_group,
              -- (sentido) nome do último ponto de ônibus no final do percurso
-             direction,
+             direction way,
              -- (tipo) tipo do ponto de ônibus
-             type,
+             type      bus_stop_type,
              -- (itinerary_id) id do itinerário
              itinerary_id,
              -- (cod) código da linha
              bus_line_id,
              -- (geom) coordenada geográfica do ponto de ônibus
-             geom,
+             geom      bus_stop_point_geom,
              -- a data do arquivo que originou o dado
              file_date
-         FROM tcc_lucas_bus_line_stop
-         WHERE file_date = '2019-05-02'
-           AND bus_line_id = '020'
+         FROM tcc_lucas_bus_line_stop_2019_05_01_bus_line_203
      ),
      shape_linha AS (
          SELECT id,
-                shape_id,
-                latitude,
-                longitude,
-                geom,
+                shape_id  shp,
+                latitude  lat,
+                longitude lon,
+                geom      shape_point_geom,
                 bus_line_id,
                 file_date
-         FROM tcc_lucas_bus_line_shape
-         WHERE file_date = '2019-05-02'
-           AND bus_line_id = '020'
+         FROM tcc_lucas_bus_line_shape_2019_05_01_bus_line_203
      ),
      tabela_veiculo AS (
          SELECT bus_line_id,
                 bus_line_name,
                 vehicle_id,
                 "time",
-                ("time" + file_date)::timestamptz programmed_timestamp,
-                timetable_id,
+                ("time" + '2019-05-01'::DATE)::TIMESTAMPTZ programmed_timestamp,
+                timetable_id                               schedule_id,
                 bus_stop_id,
-                file_date
-         FROM tcc_lucas_bus_vehicle_timetable
-         WHERE file_date = '2019-05-02'
-           AND bus_line_id = '020'
+                '2019-05-01'::DATE                         file_date
+         FROM vw_tcc_lucas_bus_vehicle_timetable
+         WHERE bus_line_id IN (
+             SELECT bus_line_id
+             FROM chosen_bus_lines
+         )
      ),
 --------------- TABLE JOINS ---------------
 --------------- SHAPES WITH AZIMUTHS ALGORITHMS ---------------
      shapes_as_polylines AS (
          SELECT file_date,
                 bus_line_id,
-                shape_id,
-                st_makeline(geom ORDER BY id) shape_polyline_geom
+                shp,
+                st_makeline(
+                        shape_point_geom
+                        ORDER BY
+                            id
+                    ) shape_polyline_geom
          FROM shape_linha
-         GROUP BY file_date, bus_line_id, shape_id
+         GROUP BY file_date,
+                  bus_line_id,
+                  shp
      ),
      shapes_and_sentidos AS (
          SELECT file_date,
                 bus_line_id,
-                shape_id,
-                direction
+                shp,
+                way
          FROM (
                   SELECT ROW_NUMBER() OVER (
                       PARTITION BY (file_date, bus_line_id)
@@ -96,37 +112,40 @@ WITH veiculos AS (
                          COUNT(*),
                          file_date,
                          bus_line_id,
-                         shape_id,
-                         direction
+                         shp,
+                         way
                   FROM (
                            SELECT x1.st_distance,
                                   ROW_NUMBER() OVER (
-                                      PARTITION BY pl.file_date, pl.id
+                                      PARTITION BY pl.file_date, pl.file_index
                                       ORDER BY
-                                          x1.st_distance
+                                          x1.st_distance ASC
                                       ) rank,
                                   pl.file_date,
                                   pl.bus_line_id,
-                                  pl.direction,
-                                  sap.shape_id
+                                  pl.way,
+                                  sap.shp
                            FROM pontos_linha pl
                                     JOIN shapes_as_polylines sap
                                          ON pl.file_date = sap.file_date AND pl.bus_line_id = sap.bus_line_id,
                                 LATERAL (
-                                    SELECT st_distance(pl.geom, sap.shape_polyline_geom) AS st_distance
+                                    SELECT st_distance(pl.bus_stop_point_geom, sap.shape_polyline_geom) AS st_distance
                                     ) x1
-                           WHERE pl.bus_line_id = '020'
+                           WHERE pl.bus_line_id IN (
+                               SELECT bus_line_id
+                               FROM chosen_bus_lines
+                           )
                            ORDER BY pl.file_date,
                                     pl.bus_line_id,
-                                    pl.direction,
-                                    pl.sequence
+                                    pl.way,
+                                    pl.seq
                        ) q1
                   WHERE rank = 1
                   GROUP BY (
                             file_date,
                             bus_line_id,
-                            shape_id,
-                            direction
+                            shp,
+                            way
                                )
               ) q2
          WHERE rank <= top_ranks
@@ -136,46 +155,48 @@ WITH veiculos AS (
          SELECT *
          FROM (
                   SELECT *,
-                         LAG(geom) OVER w,
+                         LAG(shape_point_geom) OVER w,
                          st_makeline(
-                                         LAG(geom) OVER w,
-                                         geom
+                                         LAG(shape_point_geom) OVER w,
+                                         shape_point_geom
                              ) shape_line_geom,
                          st_azimuth(
-                                         LAG(geom) OVER w,
-                                         geom
+                                         LAG(shape_point_geom) OVER w,
+                                         shape_point_geom
                              ) shape_line_azimuth
                   FROM shape_linha
-                      WINDOW w AS (PARTITION BY (file_date, bus_line_id, shape_id) ORDER BY id)
+                      WINDOW w AS (PARTITION BY (file_date, bus_line_id, shp) ORDER BY id)
               ) AS q1
          WHERE shape_line_azimuth IS NOT NULL
      ),
      pontos_linha_and_azimuths AS (
          SELECT *
          FROM (
-                  SELECT pl.id                                 "pl_id",
-                         pl.*,
-                         sa.id                                 "sa_id",
-                         sa.shape_id,
+                  SELECT pl.*,
+                         sa.id,
+                         sa.shp,
                          shape_line_geom,
                          shape_line_azimuth,
-                         st_distance(pl.geom, shape_line_geom) "st_distance",
+                         st_distance(bus_stop_point_geom, shape_line_geom),
                          ROW_NUMBER() OVER (
-                             PARTITION BY pl.file_date, pl.id
+                             PARTITION BY pl.file_date, pl.file_index
                              ORDER BY
-                                 st_distance(pl.geom, shape_line_geom)
-                             )                                 "row_number"
+                                 st_distance(bus_stop_point_geom, shape_line_geom) ASC
+                             )
                   FROM pontos_linha pl
                            JOIN shapes_and_sentidos ss ON ss.bus_line_id = pl.bus_line_id
-                      AND ss.direction = pl.direction
+                      AND ss.way = pl.way
                            JOIN shapes_and_azimuths sa ON sa.bus_line_id = ss.bus_line_id
-                      AND sa.shape_id = ss.shape_id
-                  WHERE pl.bus_line_id = '020'
+                      AND sa.shp = ss.shp
+                  WHERE pl.bus_line_id IN (
+                      SELECT bus_line_id
+                      FROM chosen_bus_lines
+                  )
               ) AS q1
          WHERE row_number = 1
-         ORDER BY bus_line_id,
-                  direction,
-                  "sequence"
+         ORDER BY bus_line_id ASC,
+                  way ASC,
+                  seq ASC
      ),
 -- **************** VEICULOS WITH AZIMUTHS ****************
      veiculos_with_azimuth AS (
@@ -193,7 +214,7 @@ WITH veiculos AS (
                  bus_line_id,
                  vehicle_id
              ORDER BY
-                 timestamp
+                 timestamp ASC
              )
          ORDER BY (
                    file_date,
@@ -212,17 +233,17 @@ WITH veiculos AS (
                 va.time_dif,
                 va.trajectory_line,
                 va.trajectory_azimuth,
-                pa.id                                         bus_stop_index,
-                pa.name,
+                file_index                                    bus_stop_index,
+                pa.bus_stop_name,
                 pa.bus_stop_id,
-                pa.sequence,
-                pa."group",
-                pa.direction,
-                pa.type,
+                pa.seq,
+                pa.bus_stop_group,
+                pa.way,
+                pa.bus_stop_type,
                 pa.itinerary_id,
-                geom,
-                pa.sequence                                   shape_sequence,
-                pa.shape_id,
+                bus_stop_point_geom,
+                pa.id                                         shape_sequence,
+                pa.shp                                        shape_id,
                 pa.shape_line_geom,
                 pa.shape_line_azimuth                         bus_stop_azimuth,
                 st_distance                                   distance_from_bus_stop_to_shape,
@@ -232,23 +253,22 @@ WITH veiculos AS (
                 MIN(l1.distance_bus_to_stop) OVER w_preceding min_distance_bus_to_stop_preceding,
                 MIN(l1.distance_bus_to_stop) OVER w_following min_distance_bus_to_stop_following
          FROM veiculos_with_azimuth va -- O onibus e o ponto de onibus precisam ser da mesma linha
-                  JOIN pontos_linha_and_azimuths pa
-                       ON TRUE
-                           AND va.bus_line_id = pa.bus_line_id
-                           AND va.file_date = pa.file_date,
+                  JOIN pontos_linha_and_azimuths pa ON TRUE
+             AND va.bus_line_id = pa.bus_line_id,
+              --AND va.file_date = pa.file_date,
               LATERAL (
                   SELECT
                       -- Calcula o ponto geográfico onde o ônibus mais perto ficou do ponto de ônibus
-                      st_closestpoint(va.trajectory_line, pa.geom)    closest_point_vehicle_bus_stop,
+                      st_closestpoint(va.trajectory_line, pa.bus_stop_point_geom)    closest_point_vehicle_bus_stop,
                       -- Calcula a proporção sobre a linha de trajetória do ponto geográfico onde o ônibus mais perto ficou do ponto de ônibus
-                      st_linelocatepoint(va.trajectory_line, pa.geom) ratio_closest_point_vehicle_bus_stop
+                      st_linelocatepoint(va.trajectory_line, pa.bus_stop_point_geom) ratio_closest_point_vehicle_bus_stop
                   ) l0,
               LATERAL (
                   SELECT
                       -- Calcula a distância entre o ônibus e o ponto de ônibus
                       st_distance(
                               l0.closest_point_vehicle_bus_stop :: geography,
-                              pa.geom :: geography
+                              pa.bus_stop_point_geom :: geography
                           )                                                                  distance_bus_to_stop,
                       -- Calcula a diferença entre o azimute da trajetória e o azimute do ponto de onibus
                       (
@@ -267,9 +287,9 @@ WITH veiculos AS (
                      va.bus_line_id,
                      va.vehicle_id,
                      pa.bus_stop_id,
-                     pa.sequence
+                     pa.seq
                  ORDER BY
-                     timestamp RANGE BETWEEN '20 minutes' PRECEDING
+                     timestamp ASC RANGE BETWEEN '20 minutes' PRECEDING
                      AND CURRENT ROW EXCLUDE CURRENT ROW
                  ),
                  w_following AS (
@@ -278,9 +298,9 @@ WITH veiculos AS (
                          va.bus_line_id,
                          va.vehicle_id,
                          pa.bus_stop_id,
-                         pa.sequence
+                         pa.seq
                      ORDER BY
-                         timestamp RANGE BETWEEN CURRENT ROW
+                         timestamp ASC RANGE BETWEEN CURRENT ROW
                      AND '20 minutes' FOLLOWING EXCLUDE CURRENT ROW
                      )
      ),
@@ -306,15 +326,14 @@ WITH veiculos AS (
                 LEAD("time") OVER w,
                 LEAD("time") OVER w - "time" dif_lead
          FROM tabela_veiculo
-             WINDOW w AS (PARTITION BY bus_line_id, vehicle_id, bus_stop_id ORDER BY "time")
+             WINDOW w AS (PARTITION BY bus_line_id, vehicle_id, bus_stop_id ORDER BY "time" ASC)
          ORDER BY bus_line_id, vehicle_id, "time"
      ),
      tabela_veiculo_bounds AS (
          SELECT *
          FROM tabela_veiculo_window,
               LATERAL (
-                  SELECT GREATEST("time" - LEAST(dif_lag / 2, "time"::INTERVAL),
-                                  '00:00:00'::TIME WITH TIME ZONE) +
+                  SELECT GREATEST("time" - LEAST(dif_lag / 2, "time"::INTERVAL), '00:00:00'::TIME WITH TIME ZONE) +
                          file_date                                          left_bound,
                          LEAST("time" + LEAST(dif_lead / 2, '23:59:59'::INTERVAL - "time"),
                                '23:59:59'::TIME WITH TIME ZONE) + file_date right_bound
@@ -329,15 +348,27 @@ WITH veiculos AS (
              AND c.bus_line_id = tvb.bus_line_id
              AND c.vehicle_id = tvb.vehicle_id
              AND c.bus_stop_id = tvb.bus_stop_id
---AND c.bus_arrival_time BETWEEN tvb.left_bound AND tvb.right_bound 
+--AND c.bus_arrival_time BETWEEN tvb.left_bound AND tvb.right_bound
              AND c.bus_arrival_time >= tvb.left_bound
              AND c.bus_arrival_time < tvb.right_bound
+     ),
+     match_report AS (
+         SELECT bus_line_id,
+                vehicle_id,
+                "time",
+                bus_arrival_time,
+                schedule_id,
+                bus_stop_id,
+                left_bound,
+                right_bound
+         FROM chegadas_com_teoricos
+         ORDER BY bus_line_id, vehicle_id, "time"
      ),
      matches_theorical_report AS (
          SELECT bus_line_id,
                 vehicle_id,
                 programmed_timestamp,
-                SUM(CASE WHEN bus_arrival_time IS NULL THEN 0 ELSE 1 END) "sum"
+                SUM(CASE WHEN bus_arrival_time IS NULL THEN 0 ELSE 1 END)
          FROM chegadas_com_teoricos
          GROUP BY bus_line_id, vehicle_id, programmed_timestamp
      ),

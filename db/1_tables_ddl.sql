@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS tcc_lucas_bus_line_stop
     itinerary_id BIGINT,
     bus_line_id  TEXT,
     file_date    DATE,
-    geom        GEOMETRY(POINT, 4326)
+    geom         GEOMETRY(POINT, 4326)
 );
 
 CREATE TABLE IF NOT EXISTS tcc_lucas_vehicle_position

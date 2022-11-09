@@ -1,3 +1,3 @@
-{%- from 'matches.sql' import matches -%}
+{%- from '2_matches.sql' import matches -%}
 
-{{ matches(bus_line, file_year, file_month, file_day) }}
+{{ matches(table_prefix, bus_line, file_year, file_month, file_day) }}

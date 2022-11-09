@@ -26,7 +26,7 @@ class DataImporter:
         self.db_client = DbClient()
 
         self._create_download_folder()
-        # self._run_pre_insert_script()
+        self._run_pre_insert_script()
 
     def _create_download_folder(self):
         download_path = os.path.join(self.root_dir, self.dest_folder)
@@ -109,16 +109,12 @@ class DataImporter:
         print('> Pos-insert steps')
 
         print('\t> Creating PostGIS fields')
-        # self._run_sql_file(os.path.join(self.root_dir, 'db', '2_postgis_operators.sql'))
+        self._run_sql_file(os.path.join(self.root_dir, 'db', '2_postgis_operators.sql'))
         print('\t\t- PostGIS fields created successfully')
 
         print('\t> Setting indexes in fields')
-        # self._run_sql_file(os.path.join(self.root_dir, 'db', '3_set_indexes.sql'))
+        self._run_sql_file(os.path.join(self.root_dir, 'db', '3_create_indexes.sql'))
         print('\t\t- Indexes set successfully')
-
-        print('\t> Partitioning vehicle position tables')
-        self._run_sql_file(os.path.join(self.root_dir, 'db', '4_table_partitioning.sql'))
-        print('\t\t- Tables partitioned successfully')
 
     def _run_pre_insert_script(self):
         print('> Pre-insert steps')
