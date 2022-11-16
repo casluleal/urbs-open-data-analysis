@@ -47,7 +47,7 @@ if __name__ == '__main__':
         files_dict = json.loads(f.read())
         files_to_import = [file for (file, included) in files_dict.items() if included]
 
-    dates = ['2019-05-' + str(day).zfill(2) for day in range(1, 9)]
+    dates = ['2019-05-' + str(day).zfill(2) for day in range(1, 15)]
 
     di = DataImporter(files_to_import,
                       BASE_URL,

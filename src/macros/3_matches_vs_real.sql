@@ -1,9 +1,9 @@
-{%- macro matches_vs_real(bus_line, file_year, file_month, file_day, file_next_day) -%}
+{%- macro matches_vs_real(table_prefix, bus_line, file_year, file_month, file_day, file_next_day) -%}
 
 --------------- SETTING CURITIBA'S TIMEZONE ---------------
 SET TIMEZONE = 'America/Sao_Paulo';
 
-CREATE TABLE IF NOT EXISTS tcc_lucas_matches_vs_teoricos_{{ file_year }}_{{ file_month }}_{{ file_day }}_bus_line_{{ bus_line }} AS
+CREATE TABLE {{table_prefix}}matches_vs_teoricos_{{file_year}}_{{file_month}}_{{file_day}}_bus_line_{{bus_line}} AS
     --------------- PARAMETERS ---------------
 -- Operando sobre as tabelas de dia _2019_05_01
 -- Operando sobre veiculo de dia _2019_05_02
@@ -13,9 +13,21 @@ CREATE TABLE IF NOT EXISTS tcc_lucas_matches_vs_teoricos_{{ file_year }}_{{ file
 WITH chosen_bus_lines AS (
     SELECT *
     FROM (
-             VALUES ('203')
+             VALUES ('{{bus_line}}')
          ) bus_lines (bus_line_id)
 ),
+     chosen_dates AS (
+         SELECT *
+         FROM (
+                  VALUES ('{{file_year}}-{{file_month}}-{{file_day}}'::DATE)
+              ) AS d (file_date)
+     ),
+     chosen_dates_vehicle AS (
+         SELECT *
+         FROM (
+                  VALUES ('{{file_year}}-{{file_month}}-{{file_next_day}}'::DATE)
+              ) AS d (file_date)
+     ),
 --------------- PURE TABLES ---------------
      veiculos AS (
          SELECT
@@ -29,7 +41,15 @@ WITH chosen_bus_lines AS (
              geom,
              -- data do arquivo
              file_date
-         FROM tcc_lucas_vehicle_position_{{ file_year }}_{{ file_month }}_{{ file_next_day }}_bus_line_{{ bus_line }}
+         FROM {{table_prefix}}vehicle_position
+         WHERE bus_line_id IN (
+             SELECT *
+             FROM chosen_bus_lines
+         )
+           AND file_date IN (
+             SELECT *
+             FROM chosen_dates_vehicle
+         )
      ),
      pontos_linha AS (
          SELECT
@@ -55,7 +75,15 @@ WITH chosen_bus_lines AS (
              geom      bus_stop_point_geom,
              -- a data do arquivo que originou o dado
              file_date
-         FROM tcc_lucas_bus_line_stop_2019_05_01_bus_line_203
+         FROM {{table_prefix}}bus_line_stop
+         WHERE bus_line_id IN (
+             SELECT *
+             FROM chosen_bus_lines
+         )
+           AND file_date IN (
+             SELECT *
+             FROM chosen_dates
+         )
      ),
      shape_linha AS (
          SELECT id,
@@ -65,21 +93,33 @@ WITH chosen_bus_lines AS (
                 geom      shape_point_geom,
                 bus_line_id,
                 file_date
-         FROM tcc_lucas_bus_line_shape_2019_05_01_bus_line_203
+         FROM {{table_prefix}}bus_line_shape
+         WHERE bus_line_id IN (
+             SELECT *
+             FROM chosen_bus_lines
+         )
+           AND file_date IN (
+             SELECT *
+             FROM chosen_dates
+         )
      ),
      tabela_veiculo AS (
          SELECT bus_line_id,
                 bus_line_name,
                 vehicle_id,
                 "time",
-                ("time" + '2019-05-01'::DATE)::TIMESTAMPTZ programmed_timestamp,
-                timetable_id                               schedule_id,
+                ("time" + file_date)::TIMESTAMPTZ programmed_timestamp,
+                timetable_id                      schedule_id,
                 bus_stop_id,
-                '2019-05-01'::DATE                         file_date
-         FROM vw_tcc_lucas_bus_vehicle_timetable
+                file_date                         file_date
+         FROM {{table_prefix}}bus_vehicle_timetable
          WHERE bus_line_id IN (
-             SELECT bus_line_id
+             SELECT *
              FROM chosen_bus_lines
+         )
+           AND file_date IN (
+             SELECT *
+             FROM chosen_dates
          )
      ),
 --------------- TABLE JOINS ---------------
@@ -121,7 +161,7 @@ WITH chosen_bus_lines AS (
                                   ROW_NUMBER() OVER (
                                       PARTITION BY pl.file_date, pl.file_index
                                       ORDER BY
-                                          x1.st_distance ASC
+                                          x1.st_distance
                                       ) rank,
                                   pl.file_date,
                                   pl.bus_line_id,
@@ -196,9 +236,9 @@ WITH chosen_bus_lines AS (
                   )
               ) AS q1
          WHERE row_number = 1
-         ORDER BY bus_line_id ASC,
-                  way ASC,
-                  seq ASC
+         ORDER BY bus_line_id,
+                  way,
+                  seq
      ),
 -- **************** VEICULOS WITH AZIMUTHS ****************
      veiculos_with_azimuth AS (
@@ -216,7 +256,7 @@ WITH chosen_bus_lines AS (
                  bus_line_id,
                  vehicle_id
              ORDER BY
-                 timestamp ASC
+                 timestamp
              )
          ORDER BY (
                    file_date,

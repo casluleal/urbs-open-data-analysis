@@ -65,7 +65,13 @@ class DataImporter:
 
                 data = []
                 for line in file_data:
-                    data.append(json.loads(line))
+                    if line[0] != '{':
+                        line_corrected = '{' + line
+                        row = json.loads(line_corrected)
+                    else:
+                        row = json.loads(line)
+
+                    data.append(row)
 
                 df = pd.DataFrame(data)
         else:

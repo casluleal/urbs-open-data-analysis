@@ -1,0 +1,83 @@
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_01_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_01_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_02_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_02_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_03_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_03_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_04_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_04_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_05_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_05_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_06_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_06_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_07_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_07_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_08_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_08_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_09_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_09_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_10_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_10_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_11_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_11_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_12_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_12_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_13_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_13_bus_line_203
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_14_bus_line_020
+UNION
+SELECT *
+FROM tcc_lucas_matches_vs_teoricos_2019_05_14_bus_line_203
