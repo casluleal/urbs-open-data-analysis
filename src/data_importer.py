@@ -9,6 +9,7 @@ import requests
 
 from db_client import DbClient
 from file_to_table_remapper import FileToTableRemapper
+from render import render_sql_template
 
 
 class DataImporter:
@@ -51,8 +52,6 @@ class DataImporter:
         if not self.keep_downloads:
             shutil.rmtree(os.path.join(self.root_dir, self.dest_folder))
 
-        # self.run_post_insert_script()
-
     def _insert_db(self, file_name, file_path, date, bus_lines):
         remapper = FileToTableRemapper()
         table_name = self.tables_prefix + remapper.get_table_name(file_name)
@@ -66,7 +65,13 @@ class DataImporter:
 
                 data = []
                 for line in file_data:
-                    data.append(json.loads(line))
+                    if line[0] != '{':
+                        line_corrected = '{' + line
+                        row = json.loads(line_corrected)
+                    else:
+                        row = json.loads(line)
+
+                    data.append(row)
 
                 df = pd.DataFrame(data)
         else:
@@ -75,6 +80,9 @@ class DataImporter:
         df.rename(columns_remapper, axis=1, inplace=True)
         df['file_date'] = date
         df['file_date'] = pd.to_datetime(df['file_date'])
+
+        if file_name == 'veiculos':
+            df['timestamp'] = pd.to_datetime(df['timestamp'], dayfirst=True)
 
         df = df.query(f'bus_line_id in @bus_lines')
 
@@ -99,8 +107,6 @@ class DataImporter:
             print('\t\t- Download complete. Saved as', file_path)
             print('\t\t- Time elapsed:', round(download_end - download_start, 2), 'secs.')
 
-            # Prevent overloading the server
-            # time.sleep(2)
         else:
             print('\t> The file already exists, no need to download it.')
             print('\t\t- Path:', file_path)
@@ -113,7 +119,7 @@ class DataImporter:
         print('\t\t- PostGIS fields created successfully')
 
         print('\t> Setting indexes in fields')
-        self._run_sql_file(os.path.join(self.root_dir, 'db', '3_set_indexes.sql'))
+        self._run_sql_file(os.path.join(self.root_dir, 'db', '3_create_indexes.sql'))
         print('\t\t- Indexes set successfully')
 
     def _run_pre_insert_script(self):
@@ -137,3 +143,17 @@ class DataImporter:
                     print(row)
             except Exception:
                 return
+
+    def run_algorithm(self, model_path: str, **kwargs) -> None:
+        print('> Running script', model_path, '-', kwargs)
+
+        sql_script = render_sql_template(model_path, **kwargs)
+        result = self.db_client.run_sql_command(sql_script)
+
+        try:
+            for row in result:
+                print(row)
+        except Exception:
+            return
+
+        print('\t\t- Script finished successfully')

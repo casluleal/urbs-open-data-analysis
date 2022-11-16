@@ -4,23 +4,23 @@ CREATE TABLE IF NOT EXISTS tcc_lucas_bus_vehicle_timetable
     bus_line_id   TEXT,
     bus_line_name TEXT,
     vehicle_id    TEXT,
-    time          TEXT,
+    time          TIME,
     timetable_id  TEXT,
     bus_stop_id   TEXT,
-    file_date     TIMESTAMP
+    file_date     DATE
 );
 
 CREATE TABLE IF NOT EXISTS tcc_lucas_bus_line_timetable
 (
     id            SERIAL PRIMARY KEY,
-    time          TEXT,
+    time          TIME,
     bus_stop_name TEXT,
     type_of_day   INT,
     bus_stop_id   TEXT,
     timetable_id  TEXT,
     accessibility TEXT,
     bus_line_id   TEXT,
-    file_date     TIMESTAMP
+    file_date     DATE
 );
 
 CREATE TABLE IF NOT EXISTS tcc_lucas_bus_line_shape
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS tcc_lucas_bus_line_shape
     latitude    DOUBLE PRECISION,
     longitude   DOUBLE PRECISION,
     bus_line_id TEXT,
-    file_date   TIMESTAMP,
+    file_date   DATE,
     geom        GEOMETRY(POINT, 4326)
 );
 
@@ -47,8 +47,8 @@ CREATE TABLE IF NOT EXISTS tcc_lucas_bus_line_stop
     type         TEXT,
     itinerary_id BIGINT,
     bus_line_id  TEXT,
-    file_date    TIMESTAMP,
-    geom        GEOMETRY(POINT, 4326)
+    file_date    DATE,
+    geom         GEOMETRY(POINT, 4326)
 );
 
 CREATE TABLE IF NOT EXISTS tcc_lucas_vehicle_position
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS tcc_lucas_vehicle_position
     longitude   DOUBLE PRECISION,
     timestamp   TIMESTAMP,
     bus_line_id TEXT,
-    file_date   TIMESTAMP,
+    file_date   DATE,
     geom        GEOMETRY(POINT, 4326)
 );
 
@@ -71,5 +71,5 @@ CREATE TABLE IF NOT EXISTS tcc_lucas_bus_line
     card_only   TEXT,
     category    TEXT,
     color       TEXT,
-    file_date   TIMESTAMP
+    file_date   DATE
 );

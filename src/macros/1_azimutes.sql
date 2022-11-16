@@ -1,14 +1,16 @@
-CREATE TABLE tcc_lucas_bus_line_stop_azimuth_test AS
+{%- macro azimutes(table_prefix, bus_line, file_year, file_month, file_day) -%}
+
+CREATE TABLE {{table_prefix}}bus_line_stop_azimuth_{{file_year}}_{{file_month}}_{{file_day}}_bus_line_{{bus_line}} AS
 WITH chosen_bus_lines AS (
     SELECT *
     FROM (
-             VALUES ('020')
+             VALUES ('{{bus_line}}')
          ) AS b (bus_line_id)
 ),
      chosen_dates AS (
          SELECT *
          FROM (
-                  VALUES ('2019-05-01'::DATE)
+                  VALUES ('{{file_year}}-{{file_month}}-{{file_day}}'::DATE)
               ) AS d (file_date)
      ),
      pontos_linha AS (
@@ -35,7 +37,7 @@ WITH chosen_bus_lines AS (
              geom,
              -- a data do arquivo que originou o dado
              file_date
-         FROM tcc_lucas_bus_line_stop
+         FROM {{table_prefix}}bus_line_stop
          WHERE file_date IN (
              SELECT *
              FROM chosen_dates
@@ -53,7 +55,7 @@ WITH chosen_bus_lines AS (
                 geom,
                 bus_line_id,
                 file_date
-         FROM tcc_lucas_bus_line_shape
+         FROM {{table_prefix}}bus_line_shape
          WHERE file_date IN (
              SELECT *
              FROM chosen_dates
@@ -68,7 +70,7 @@ WITH chosen_bus_lines AS (
                 bus_line_id,
                 shape_id,
                 st_makeline(geom ORDER BY id) AS shape_polyline_geom
-         FROM tcc_lucas_bus_line_shape
+         FROM {{table_prefix}}bus_line_shape
          WHERE file_date IN (
              SELECT *
              FROM chosen_dates
@@ -188,3 +190,5 @@ WITH chosen_bus_lines AS (
      )
 SELECT *
 FROM pontos_linha_and_azimuths;
+
+{%- endmacro -%}
